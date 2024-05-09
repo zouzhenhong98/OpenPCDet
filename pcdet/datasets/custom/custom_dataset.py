@@ -152,13 +152,18 @@ class CustomDataset(DatasetTemplate):
                 annotations = {}
                 gt_boxes_lidar, name = self.get_label(sample_idx)
                 annotations['name'] = name
-                annotations['gt_boxes_lidar'] = gt_boxes_lidar[:, :7]
+                try:
+                    annotations['gt_boxes_lidar'] = gt_boxes_lidar[:, :7]
+                except Exception as exp:
+                    print(exp)
+                    import pdb; pdb.set_trace()
                 info['annos'] = annotations
 
             return info
 
         sample_id_list = sample_id_list if sample_id_list is not None else self.sample_id_list
 
+        # import pdb; pdb.set_trace()
         # create a thread pool to improve the velocity
         with futures.ThreadPoolExecutor(num_workers) as executor:
             infos = executor.map(process_single_scene, sample_id_list)
@@ -275,9 +280,11 @@ if __name__ == '__main__':
 
         dataset_cfg = EasyDict(yaml.safe_load(open(sys.argv[2])))
         ROOT_DIR = (Path(__file__).resolve().parent / '../../../').resolve()
+        ROOT_DIR = Path("/hy-tmp")
         create_custom_infos(
             dataset_cfg=dataset_cfg,
-            class_names=['Vehicle', 'Pedestrian', 'Cyclist'],
+            # class_names=['Vehicle', 'Pedestrian', 'Cyclist'],
+            class_names=['MBT', 'FV', 'Soldier', 'Car', 'Artillery'],
             data_path=ROOT_DIR / 'data' / 'custom',
             save_path=ROOT_DIR / 'data' / 'custom',
         )
