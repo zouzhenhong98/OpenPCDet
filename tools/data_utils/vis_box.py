@@ -141,8 +141,17 @@ def save_pointxy_to_jpg(
         box_color = (0, 0, 255)
         thickness = 2
         for box in box_list:
+            if np.any(np.isinf(box)) or np.any(np.isnan(box)):
+                continue
+            invalid_flag = False
+            for item in box:
+                if abs(item) > 200:
+                    invalid_flag = True
+                    break
+            if invalid_flag:
+                continue
             corners = box_to_xycoor(box)
-            print(box, corners, [adapt_coor(copy.deepcopy(cor)) for cor in corners])
+            # print(box, corners, [adapt_coor(copy.deepcopy(cor)) for cor in corners])
             for i in range(4):
                 next_i = (i + 1) % 4
                 cv2.line(
