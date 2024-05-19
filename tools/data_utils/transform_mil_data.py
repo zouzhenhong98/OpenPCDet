@@ -7,6 +7,7 @@ import pdb
 import logging
 from pyntcloud import PyntCloud
 import numpy as np
+import random
 
 
 military_mapping = {
@@ -43,9 +44,9 @@ os.makedirs(label_folder, exist_ok=True)
 
 
 # source data
-src_point_root = "/hy-tmp/5165/pcd"
-src_label_root = "/hy-tmp/5165/bb3d"
-sample_num = 10000
+src_point_root = "/hy-tmp/datasets/pcd"
+src_label_root = "/hy-tmp/datasets/bb3d"
+sample_num = 100000
 point_files = sorted(glob(f"{src_point_root}/*.pcd"))
 sample_step = int(len(point_files) / sample_num)
 data_names = []
@@ -54,6 +55,9 @@ for pfile in tqdm(point_files[::max(sample_step, 1)]):
     label = osp.join(src_label_root, f"{pname}.txt")
     dst_pfile = osp.join(point_folder, osp.basename(pfile))
     dst_label = osp.join(label_folder, osp.basename(label))
+    if osp.exists(dst_pfile.replace(".pcd", '.npy')) and osp.exists(dst_label):
+        data_names.append(pname)
+        continue
     with open(pfile, "rb") as file:
         lines = file.readlines()
     if lines[0].decode("utf-8") != 'VERSION 0.7\n':
@@ -72,7 +76,7 @@ for pfile in tqdm(point_files[::max(sample_step, 1)]):
             parts = line.split()
             parts[0] = military_mapping[parts[0]]
             # notice, original annotaion follows which coordinates
-            new_line = " ".join([parts[i] for i in [1, 2, 3, 5, 4, 6, 9, 0]]) + "\n"
+            new_line = " ".join([parts[i] for i in [1, 2, 3, 4, 5, 6, 9, 0]]) + "\n"
             new_boxes.append(new_line)
         with open(dst_label, "w", encoding="utf-8") as file:
             file.writelines(new_boxes)
@@ -86,9 +90,16 @@ for pfile in tqdm(point_files[::max(sample_step, 1)]):
         logging.error(label)
         continue
     data_names.append(pname)
+data_index = list(range(len(data_names)))
+random.shuffle(data_index)
+train_num = int(len(data_index) * 0.8)
+train_index = data_index[:train_num]
+val_index = data_index[train_num:]
+train_names = [data_names[idx] for idx in train_index] 
+val_names = [data_names[idx] for idx in val_index] 
 with open(osp.join(index_folder, "train.txt"), "w", encoding="utf-8") as file:
-    for name in data_names:
+    for name in train_names:
         file.write(name + "\n")
 with open(osp.join(index_folder, "val.txt"), "w", encoding="utf-8") as file:
-    for name in data_names:
+    for name in val_names:
         file.write(name + "\n")
